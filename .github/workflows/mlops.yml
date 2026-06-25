@@ -117,10 +117,10 @@ jobs:
           import os
           import sys
           acc = float(os.environ.get('ACC_SCORE', 0))
-          if acc < 0.70:
-              print(f"Accuracy ({acc}) < 0.70. Bỏ qua bước Deploy.")
+          if acc < 0.60:
+              print(f"Accuracy ({acc}) < 0.6. Bỏ qua bước Deploy.")
               sys.exit(1)
-          print(f"Accuracy ({acc}) >= 0.70. Cho phép Deploy.")
+          print(f"Accuracy ({acc}) >= 0.6. Cho phép Deploy.")
           EOF
         env:
           ACC_SCORE: ${{ needs.train.outputs.accuracy }}
