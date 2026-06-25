@@ -1,0 +1,143 @@
+name: MLOps Pipeline
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'data/**.dvc'
+      - 'src/**.py'
+      - 'params.yaml'
+  workflow_dispatch:
+
+jobs:
+
+  # JOB 1: Unit Test
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run tests
+        run: pytest tests/ -v
+
+  # JOB 2: Train Model
+  train:
+    name: Train
+    needs: test
+    runs-on: ubuntu-latest
+    outputs:
+      accuracy: ${{ steps.read_metrics.outputs.accuracy }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Authenticate to AWS
+        run: |
+          python - <<'EOF'
+          import json
+          import os
+          creds_str = os.environ.get('CLOUD_CREDENTIALS', '{}').strip()
+          if not creds_str: creds_str = '{}'
+          try:
+              creds = json.loads(creds_str)
+          except:
+              print("Warning: CLOUD_CREDENTIALS is not valid JSON")
+              creds = {}
+          
+          with open(os.environ['GITHUB_ENV'], 'a') as f:
+              f.write(f"AWS_ACCESS_KEY_ID={creds.get('aws_access_key_id', '')}\n")
+              f.write(f"AWS_SECRET_ACCESS_KEY={creds.get('aws_secret_access_key', '')}\n")
+              f.write(f"AWS_DEFAULT_REGION={creds.get('aws_default_region', 'us-east-1')}\n")
+          EOF
+        env:
+          CLOUD_CREDENTIALS: ${{ secrets.CLOUD_CREDENTIALS }}
+
+      - name: Pull data with DVC
+        run: dvc pull
+
+      - name: Train model
+        run: python src/train.py
+
+      - name: Read metrics
+        id: read_metrics
+        run: |
+          python - <<'EOF'
+          import json
+          import os
+          with open('outputs/metrics.json') as f:
+              acc = json.load(f)['accuracy']
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
+              out.write(f"accuracy={acc}\n")
+          EOF
+
+      - name: Upload model to Cloud Storage
+        run: |
+          python - <<'EOF'
+          import boto3
+          import os
+          
+          bucket = os.environ.get('CLOUD_BUCKET')
+          s3 = boto3.client('s3')
+          s3.upload_file('models/model.pkl', bucket, 'models/latest/model.pkl')
+          print(f"Uploaded model.pkl to s3://{bucket}/models/latest/model.pkl")
+          EOF
+        env:
+          CLOUD_BUCKET: ${{ secrets.CLOUD_BUCKET }}
+
+      - name: Save metrics as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: metrics
+          path: outputs/metrics.json
+
+  # JOB 3: Eval Gate
+  eval:
+    name: Eval
+    needs: train
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check eval gate
+        run: |
+          python - <<'EOF'
+          import os
+          import sys
+          acc = float(os.environ.get('ACC_SCORE', 0))
+          if acc < 0.70:
+              print(f"Accuracy ({acc}) < 0.70. Bỏ qua bước Deploy.")
+              sys.exit(1)
+          print(f"Accuracy ({acc}) >= 0.70. Cho phép Deploy.")
+          EOF
+        env:
+          ACC_SCORE: ${{ needs.train.outputs.accuracy }}
+
+  # JOB 4: Deploy
+  deploy:
+    name: Deploy
+    needs: eval
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy model to VM
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            sudo systemctl restart mlops-serve
+            sleep 5
+            curl -f http://localhost:8000/health || exit 1
