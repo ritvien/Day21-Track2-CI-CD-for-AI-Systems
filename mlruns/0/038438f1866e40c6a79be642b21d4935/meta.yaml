@@ -1,0 +1,15 @@
+artifact_uri: file:///C:/Users/Admin/AI%20in%20Action/Lab/Lab21/Day21-Track2-CI-CD-for-AI-Systems/mlruns/0/038438f1866e40c6a79be642b21d4935/artifacts
+end_time: 1782362319896
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 038438f1866e40c6a79be642b21d4935
+run_name: melodic-crab-863
+run_uuid: 038438f1866e40c6a79be642b21d4935
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1782362315994
+status: 3
+tags: []
+user_id: Admin

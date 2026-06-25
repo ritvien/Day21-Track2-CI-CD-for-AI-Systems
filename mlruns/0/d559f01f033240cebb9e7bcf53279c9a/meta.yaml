@@ -1,0 +1,15 @@
+artifact_uri: file:///C:/Users/Admin/AI%20in%20Action/Lab/Lab21/Day21-Track2-CI-CD-for-AI-Systems/mlruns/0/d559f01f033240cebb9e7bcf53279c9a/artifacts
+end_time: 1782359651159
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: d559f01f033240cebb9e7bcf53279c9a
+run_name: classy-croc-849
+run_uuid: d559f01f033240cebb9e7bcf53279c9a
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1782359644740
+status: 3
+tags: []
+user_id: Admin

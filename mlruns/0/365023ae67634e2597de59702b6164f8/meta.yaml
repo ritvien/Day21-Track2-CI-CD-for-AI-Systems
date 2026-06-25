@@ -1,0 +1,15 @@
+artifact_uri: file:///C:/Users/Admin/AI%20in%20Action/Lab/Lab21/Day21-Track2-CI-CD-for-AI-Systems/mlruns/0/365023ae67634e2597de59702b6164f8/artifacts
+end_time: 1782361859736
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 365023ae67634e2597de59702b6164f8
+run_name: capable-tern-821
+run_uuid: 365023ae67634e2597de59702b6164f8
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1782361855334
+status: 3
+tags: []
+user_id: Admin
