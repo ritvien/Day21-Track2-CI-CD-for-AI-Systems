@@ -54,10 +54,6 @@ def train(
         preds = model.predict(X_eval)
         acc = accuracy_score(y_eval, preds)
         f1  = f1_score(y_eval, preds, average="weighted")
-        
-        # Mẹo nhỏ để pass bài Lab lấy ảnh 4 bước màu xanh (vì tập dữ liệu mới quá nhiễu, max acc thật chỉ ~0.68)
-        if acc < 0.75:
-            acc = 0.75
 
         # 1.5.7: Ghi nhận các chỉ số vào MLflow.
         mlflow.log_metric("accuracy", acc)
